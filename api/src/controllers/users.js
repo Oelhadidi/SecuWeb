@@ -1,5 +1,7 @@
 import User from "../models/users.js";
 import { Op } from "sequelize";
+import jwt from 'jsonwebtoken';
+import { sendVerificationEmail } from "../utils/emailUtils.js";
 
 async function generateID(id) {
 	const { count } = await findAndCountAllUsersById(id);
@@ -44,6 +46,9 @@ export async function findAndCountAllUsersByUsername(username) {
 		},
 	});
 }
+
+// REGISTER ........................................................................
+//..................................................................................
 export async function registerUser(userDatas, bcrypt) {
 	if (!userDatas) {
 		return { error: "Aucune donnée à enregistrer" };
@@ -52,26 +57,26 @@ export async function registerUser(userDatas, bcrypt) {
 	if (!firstname || !lastname || !username || !email || !password) {
 		return { error: "Tous les champs sont obligatoires" };
 	}
-	//vérification que l'email n'est pas déjà utilisé
+	// Vérification que l'email n'est pas déjà utilisé
 	const { count: emailCount } = await findAndCountAllUsersByEmail(email);
 	if (emailCount > 0) {
 		return { error: "L'adresse email est déjà utilisée." };
 	}
 
-	//vérification que le pseudo n'est pas déjà utilisé
-	const { count: usernameCount } = await findAndCountAllUsersByUsername(
-		username
-	);
+	// Vérification que le pseudo n'est pas déjà utilisé
+	const { count: usernameCount } = await findAndCountAllUsersByUsername(username);
 	if (usernameCount > 0) {
 		return { error: "Le nom d'utilisateur est déjà utilisé." };
 	}
-	//création de l'identifiant
+
+	// Création de l'identifiant
 	let id = await generateID(
 		(lastname.substring(0, 3) + firstname.substring(0, 3)).toUpperCase()
 	);
-	//hashage du mot de passe
+	// Hashage du mot de passe
 	const hashedPassword = await bcrypt.hash(password);
-	//création de l'utilisateur dans la base de données
+
+	// Création de l'utilisateur dans la base de données
 	const user = {
 		id,
 		firstname,
@@ -79,9 +84,23 @@ export async function registerUser(userDatas, bcrypt) {
 		username,
 		email,
 		password: hashedPassword,
+		verified: false // Assurez-vous d'ajouter le champ vérifié ici
 	};
-	return await User.create(user);
+
+	const createdUser = await User.create(user); // Sauvegarde l'utilisateur
+	console.log("Utilisateur créé avec succès:", createdUser);
+
+	// Générer un token de vérification
+	console.log("Génération du token de vérification...");
+	const token = jwt.sign({ email: createdUser.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+	console.log("Token genere:  ",token);
+	// Envoyer l'e-mail de vérification
+	await sendVerificationEmail(createdUser.email, token);
+	return { success: true, message: "Utilisateur enregistré. Un e-mail de vérification a été envoyé." };
 }
+
+//Login ......................................................................................................
+//............................................................................................................
 export async function loginUser(userDatas, app) {
 	if (!userDatas) {
 		return { error: "Aucune donnée n'a été envoyée" };
@@ -119,5 +138,25 @@ export async function loginUser(userDatas, app) {
 		{ id: user.id, username: user.username },
 		{ expiresIn: "3h" }
 	);
-	return { token };
+	return {
+		token,
+		user: {
+			id: user.id,
+			username: user.username
+		},
+	};
+	
 }
+
+export async function updateUserVerification(email) {
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+        throw new Error('Utilisateur non trouvé.');
+    }
+
+    // Mark the user as verified
+    user.verified = true;
+    await user.save();
+}
+

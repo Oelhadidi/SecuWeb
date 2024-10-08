@@ -3,20 +3,25 @@ import {
 	getUsers,
 	loginUser,
 	registerUser,
+	updateUserVerification,
 } from "../controllers/users.js";
 import { generateToken, verifyToken } from "../utils/auth.js";
+import jwt from 'jsonwebtoken';
 
 export function usersRoutes(app) {
 	app.post("/login", async (request, reply) => {
 		try {
-			const user = await loginUser(request.body, app);
-			if (!user) {
-				return reply.status(401).send({ error: "Invalid email or password" });
+			const { email, password } = request.body;
+			const result = await loginUser({ email, password }, app);
+			
+			if (result.error) {
+				return reply.status(401).send({ error: result.error });
 			}
-			// Génération du token JWT
-			const token = generateToken(user);
-			reply.send({ token, user });
+			
+			// Si l'authentification réussit, renvoyez le token et l'utilisateur
+			reply.send({ token: result.token, user: result.user });
 		} catch (error) {
+			console.error("Login error:", error);
 			reply.status(500).send({ error: "An error occurred during login" });
 		}
 	});
@@ -62,4 +67,21 @@ export function usersRoutes(app) {
 			reply.status(500).send({ error: "An error occurred" });
 		}
 	});
+
+	// Route de vérification user
+	app.get('/verify', async (req, res) => {
+		const { token } = req.query;
+
+		try {
+			console.log("The token is : ", token)
+			const decoded = jwt.verify(token, process.env.JWT_SECRET);
+			const email = decoded.email;
+
+			await updateUserVerification(email);
+			return res.status(200).send({ success: true, message: "Votre compte a été vérifié avec succès!" });
+		} catch (error) {
+			return res.status(400).send({ success: false, message: 'Lien de vérification invalide ou expiré.' });
+		}
+	});
+
 }

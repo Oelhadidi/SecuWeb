@@ -4,8 +4,8 @@ import jwt from 'jsonwebtoken';
 export function generateToken(user) {
 	return jwt.sign(
 		{ id: user.id, email: user.email }, // Payload
-		process.env.JWT_SECRET,             // Clé secrète
-		{ expiresIn: '1h' }                 // Expiration
+		process.env.JWT_SECRET,             
+		{ expiresIn: '1h' }                 
 	);
 }
 
