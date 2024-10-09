@@ -67,7 +67,7 @@ const Puissance = () => {
           board[row][col + 2] === player &&
           board[row][col + 3] === player
         ) {
-          return true;
+          return [[row, col], [row, col + 1], [row, col + 2], [row, col + 3]]; // Return winning cells
         }
       }
     }
@@ -81,7 +81,7 @@ const Puissance = () => {
           board[row + 2][col] === player &&
           board[row + 3][col] === player
         ) {
-          return true;
+          return [[row, col], [row + 1, col], [row + 2, col], [row + 3, col]]; // Return winning cells
         }
       }
     }
@@ -95,7 +95,7 @@ const Puissance = () => {
           board[row + 2][col + 2] === player &&
           board[row + 3][col + 3] === player
         ) {
-          return true;
+          return [[row, col], [row + 1, col + 1], [row + 2, col + 2], [row + 3, col + 3]]; // Return winning cells
         }
       }
     }
@@ -109,43 +109,50 @@ const Puissance = () => {
           board[row + 2][col - 2] === player &&
           board[row + 3][col - 3] === player
         ) {
-          return true;
+          return [[row, col], [row + 1, col - 1], [row + 2, col - 2], [row + 3, col - 3]]; // Return winning cells
         }
       }
     }
   
     // No win found
-    return false;
+    return null;
   };
+  
+  const [winningCells, setWinningCells] = useState([]);
+
   
 
 
   const dropDisc = useCallback((colIndex) => {
-  if (!isMyTurn || winner) return;
-  const rowIndex = board.map(row => row[colIndex]).lastIndexOf(null);
-  if (rowIndex === -1) return;
+    if (!isMyTurn || winner) return;
+    const rowIndex = board.map(row => row[colIndex]).lastIndexOf(null);
+    if (rowIndex === -1) return;
+  
+    const newBoard = board.map(row => [...row]);
+    newBoard[rowIndex][colIndex] = currentPlayer;
+    setBoard(newBoard);
+  
+    // Check if the current player wins and get the winning cells
+    const winningCellsResult = checkWin(newBoard, currentPlayer);
+    if (winningCellsResult) {
+      setWinner(user.username);
+      setWinningCells(winningCellsResult);  // Store the winning cells
+      socket.emit('gameWon', { winner: user.username, roomCode });
+    } else {
+      socket.emit('makeMove', { board: newBoard, nextPlayer: currentPlayer === 1 ? 2 : 1, roomCode });
+      setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+      setIsMyTurn(false);
+    }
+  }, [isMyTurn, winner, board, currentPlayer]);
+  
 
-  const newBoard = board.map(row => [...row]);
-  newBoard[rowIndex][colIndex] = currentPlayer;
-  setBoard(newBoard);
-
-  // Check if the current player wins
-  if (checkWin(newBoard, currentPlayer)) {
-    setWinner(user.username);
-    socket.emit('gameWon', { winner: user.username, roomCode });
-  } else {
-    socket.emit('makeMove', { board: newBoard, nextPlayer: currentPlayer === 1 ? 2 : 1, roomCode });
-    setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
-    setIsMyTurn(false);
-  }
-}, [isMyTurn, winner, board, currentPlayer]);
-
-  const resetGame = () => {
-    setBoard(Array(6).fill(null).map(() => Array(7).fill(null)));
-    setCurrentPlayer(1);
-    setWinner(null);
-    socket.emit('resetGame', roomCode);
-  };
+  const resetGame = useCallback(() => {
+    setBoard(Array(6).fill(null).map(() => Array(7).fill(null)));  // Reset the board
+    setCurrentPlayer(1);  // Reset to player 1's turn
+    setWinner(null);  // Clear winner
+    setWinningCells([]);  // Clear the highlighted winning cells
+    socket.emit('resetGame', roomCode);  // Notify the server
+  }, [roomCode]);
 
   if (!isRoomJoined) {
     return (
@@ -158,7 +165,12 @@ const Puissance = () => {
   }
 
   if (!isGameReady) {
-    return <div className="waiting">Waiting for another player...</div>;
+    return (
+      <div className="bg-white p-5 flex flex-col items-center text-lg">
+        <h2 className='text-gray-500'>Waiting for another player...</h2>
+        <div className="spinner"></div>
+      </div>
+    );
   }
 
   return (
@@ -170,17 +182,23 @@ const Puissance = () => {
         <h2>{isMyTurn ? 'Your Turn' : "Opponent's Turn"}</h2>
       )}
       <div className="board">
-        {board.map((row, rowIndex) => (
-          <div key={rowIndex} className="row">
-            {row.map((cell, colIndex) => (
-              <div key={colIndex} className="col" onClick={() => dropDisc(colIndex)}>
-                <div className={`cell ${cell === 1 ? 'red' : cell === 2 ? 'yellow' : ''}`}></div>
-              </div>
-            ))}
+  {board.map((row, rowIndex) => (
+    <div key={rowIndex} className="row">
+      {row.map((cell, colIndex) => {
+        const isWinningCell = winningCells.some(
+          ([winRow, winCol]) => winRow === rowIndex && winCol === colIndex
+        );
+        return (
+          <div key={colIndex} className="col" onClick={() => dropDisc(colIndex)}>
+            <div className={`cell ${cell === 1 ? 'red' : cell === 2 ? 'yellow' : ''} ${isWinningCell ? 'winning-cell' : ''}`}></div>
           </div>
-        ))}
-      </div>
-      {winner && <button onClick={resetGame}>Restart Game</button>}
+        );
+      })}
+    </div>
+  ))}
+</div>
+
+      {winner && <button onClick={resetGame} className='mt-2 bg-red-500 hover:bg-red-800'>Restart Game</button>}
     </div>
   );
 };

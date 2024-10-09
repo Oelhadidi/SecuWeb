@@ -20,8 +20,8 @@ const Dashboard = ({ darkMode }) => {
           <Link to="/signin" className="bg-teal-400 text-white px-6 py-3 rounded-md hover:bg-teal-500 transition-colors duration-300">Sign In</Link>
         </div>
       </main>
-      <footer className={`w-full p-4 ${darkMode ? 'bg-gray-800' : 'bg-gray-800'} text-center`}>
-        <p>© 2024 Game Vite EO. All rights reserved.</p>
+      <footer className={`w-full p-4 ${darkMode ? '1a202c' : '1a202c'} text-center`}>
+        <p className={`w-full p-4 ${darkMode ? 'text-gray-800' : 'text-gray-200'} text-center`}>© 2024 Game Vite EO. All rights reserved.</p>
       </footer>
     </div>
   );

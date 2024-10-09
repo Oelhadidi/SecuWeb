@@ -41,7 +41,7 @@ const Header = ({ toggleDarkMode, darkMode }) => {
         </button>
 
         {/* Hamburger button for mobile */}
-        <button onClick={toggleMenu} className="text-white lg:hidden focus:outline-none">
+        <button onClick={toggleMenu} className="text-white lg:hidden focus:outline-none bg-gray-600">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={!isOpen ? 'M4 6h16M4 12h16M4 18h16' : 'M6 18L18 6M6 6l12 12'}></path>
           </svg>
@@ -67,7 +67,17 @@ const Header = ({ toggleDarkMode, darkMode }) => {
         {isOpen && (
           <nav className={`lg:hidden absolute top-16 left-0 right-0 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-r from-purple-500 to-indigo-600'} flex flex-col items-center space-y-4 p-4`}>
             <NavLink to="/" className="text-white hover:text-gray-300 transition-colors duration-300" onClick={toggleMenu}>Dashboard</NavLink>
-            <NavLink to="/signin" className="text-white hover:text-gray-300 transition-colors duration-300" onClick={toggleMenu}>Sign In</NavLink>
+            <NavLink to="/puissance" className="text-white hover:text-gray-300 transition-colors duration-300">Puissance</NavLink>
+            {user ? (
+            <div className="flex items-center cursor-pointer" onClick={toggleOverlay}>
+              <svg className="w-6 h-6 rounded-full mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.33 0-10 1.67-10 5v1h20v-1c0-3.33-6.67-5-10-5z" />
+              </svg>
+              <span>{user.username}</span>
+            </div>
+          ) : (
+            <NavLink to="/signin" className="text-white hover:text-gray-300 transition-colors duration-300">Sign In</NavLink>
+          )}
           </nav>
         )}
       </div>
