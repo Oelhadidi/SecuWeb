@@ -11,7 +11,7 @@ const Dashboard = ({ darkMode }) => {
   }, [darkMode]);
 
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen ${darkMode ? 'bg-black text-black' : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'}`}>
+    <div className={`flex flex-col items-center justify-center min-h-screen `}>
       <main className="flex flex-col items-center justify-center flex-grow ">
         <h2 className="text-5xl font-bold mb-4">Welcome to Game Vite!</h2>
         <p className="text-lg mb-8 text-center max-w-2xl">Join the ultimate gaming community. Play, compete, and connect with gamers from around the world. Sign up now to start your adventure!</p>

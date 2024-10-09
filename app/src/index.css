@@ -8,7 +8,7 @@
   font-weight: 400;
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-
+  background: linear-gradient(to right, #9f7aea, #5a67d8);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -92,7 +92,7 @@ Game 2 style: */
 }
 
 .game-container.light {
-  background: linear-gradient(to right, #9f7aea, #5a67d8);;
+  background: linear-gradient(to right, #9f7aea, #5a67d8);
   color: #333;
   height: 750px;
 }
@@ -167,6 +167,14 @@ Game 2 style: */
 
 .game-container.dark .reset-btn:hover {
   background-color: #4a5568;
+}
+
+.red {
+  background-color: red;
+}
+
+.yellow {
+  background-color: yellow;
 }
 
 /*************************************************/

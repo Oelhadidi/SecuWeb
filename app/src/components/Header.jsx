@@ -32,10 +32,9 @@ const Header = ({ toggleDarkMode, darkMode }) => {
   }, [darkMode]);
 
   return (
-    <header className={`p-4 w-screen text-white ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-r from-purple-500 to-indigo-600'}`}>
-      <div className="container mx-auto flex justify-between items-center">
+    <header className={`p-4 w-screen text-white `}>
+      <div className="container mx-auto flex justify-between items-center" /**${darkMode ? 'bg-gray-900' : 'bg-gradient-to-r from-purple-500 to-indigo-600'} */>
         <h1 className="text-3xl font-extrabold tracking-tight">Game Vite</h1>
-
         {/* Dark mode toggle */}
         <button onClick={toggleDarkMode} className="text-yellow-400 hover:text-yellow-300 transition-colors duration-300">
           {darkMode ? <FaSun /> : <FaMoon />}
@@ -67,8 +66,7 @@ const Header = ({ toggleDarkMode, darkMode }) => {
         {/* Mobile nav */}
         {isOpen && (
           <nav className={`lg:hidden absolute top-16 left-0 right-0 ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-r from-purple-500 to-indigo-600'} flex flex-col items-center space-y-4 p-4`}>
-            <NavLink to="/" className="text-white hover:text-gray-300 transition-colors duration-300" onClick={toggleMenu}>Home</NavLink>
-            <NavLink to="/dashboard" className="text-white hover:text-gray-300 transition-colors duration-300" onClick={toggleMenu}>Dashboard</NavLink>
+            <NavLink to="/" className="text-white hover:text-gray-300 transition-colors duration-300" onClick={toggleMenu}>Dashboard</NavLink>
             <NavLink to="/signin" className="text-white hover:text-gray-300 transition-colors duration-300" onClick={toggleMenu}>Sign In</NavLink>
           </nav>
         )}
