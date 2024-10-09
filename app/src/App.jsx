@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import Game from './pages/Game';
-import Game2 from './pages/Game2';
+import Puissance from './pages/Puissance';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import VerifyAccount from './components/VerifyAccount';
@@ -35,9 +35,8 @@ function App() {
     <Router>
       <div className={darkMode ? 'dark' : ''}>
         <Routes>
-          <Route path="/" element={<Layout toggleDarkMode={toggleDarkMode} darkMode={darkMode}><Game /></Layout>} />
-          <Route path="/game2" element={<Layout toggleDarkMode={toggleDarkMode} darkMode={darkMode}><Game2 /></Layout>} />
-          <Route path="/dashboard" element={<Layout toggleDarkMode={toggleDarkMode} darkMode={darkMode}><Dashboard /></Layout>} />
+          <Route path="/puissance" element={<Layout toggleDarkMode={toggleDarkMode} darkMode={darkMode}><Puissance /></Layout>} />
+          <Route path="/" element={<Layout toggleDarkMode={toggleDarkMode} darkMode={darkMode}><Dashboard /></Layout>} />
           <Route path="/signin" element={<SignIn darkMode={darkMode} />} />
           <Route path="/signup" element={<SignUp darkMode={darkMode} />} />
           <Route path="/verify" element={<VerifyAccount darkMode={darkMode} />} />

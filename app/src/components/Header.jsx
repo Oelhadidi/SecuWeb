@@ -50,9 +50,8 @@ const Header = ({ toggleDarkMode, darkMode }) => {
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex space-x-6">
-          <NavLink to="/dashboard" className="text-white hover:text-gray-300 transition-colors duration-300">Dashboard</NavLink>
-          <NavLink to="/" className="text-white hover:text-gray-300 transition-colors duration-300">Game</NavLink>
-          <NavLink to="/game2" className="text-white hover:text-gray-300 transition-colors duration-300">Mario</NavLink>
+          <NavLink to="/" className="text-white hover:text-gray-300 transition-colors duration-300">Dashboard</NavLink>
+          <NavLink to="/puissance" className="text-white hover:text-gray-300 transition-colors duration-300">Puissance</NavLink>
           {user ? (
             <div className="flex items-center cursor-pointer" onClick={toggleOverlay}>
               <svg className="w-6 h-6 rounded-full mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

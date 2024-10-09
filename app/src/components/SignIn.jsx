@@ -34,7 +34,7 @@ const SignIn = ({ darkMode }) => {
               localStorage.setItem('user', JSON.stringify(response.data.user));
 
               setSubmitting(false);
-              navigate('/dashboard');
+              navigate('/');
             } catch (error) {
               setErrors({ email: 'Invalid email or password' });
               setSubmitting(false);

@@ -41,7 +41,7 @@ const SignUp = ({ darkMode }) => {
 
               console.log('Sign Up Successful:', response.data);
               setSubmitting(false);
-              navigate('/dashboard'); // Redirige vers la page de dashboard après inscription réussie
+              navigate('/'); // Redirige vers la page de dashboard après inscription réussie
             } catch (error) {
               console.error('Error during Sign Up:', error.response.data);
               setErrors({ email: 'Email already used or other error' });
