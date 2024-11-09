@@ -7,9 +7,9 @@ const SignUp = ({ darkMode }) => {
   const navigate = useNavigate();
 
   return (
-    <div className={`flex items-center justify-center mt-7 ${darkMode ? ' text-white' : ' text-black'}`}>
+    <div className={`flex items-center justify-center mt-7 ${darkMode ? ' text-white' : ' text-white'}`}>
       <div className={`w-full max-w-md p-8 space-y-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg mx-4 md:mx-0`}>
-        <h2 className={`text-3xl font-extrabold text-center ${darkMode ? 'text-white' : 'text-gray-900'}`}>Sign Up</h2>
+        <h2 className={`text-3xl font-extrabold text-center ${darkMode ? 'text-white' : 'text-white'}`}>Sign Up</h2>
         <Formik
           initialValues={{ 
             firstName: '', 

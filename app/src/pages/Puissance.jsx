@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+// import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
 
 // Initialize socket connection
 const socket = io('http://localhost:3000', { autoConnect: false });
-
 const Puissance = () => {
   const [board, setBoard] = useState(Array(6).fill(null).map(() => Array(7).fill(null))); // Game board
   const [currentPlayer, setCurrentPlayer] = useState(1); // Current player
@@ -15,6 +15,7 @@ const Puissance = () => {
   const [isRoomFull, setIsRoomFull] = useState(false); // Room full state
   const user = JSON.parse(localStorage.getItem('user')); // User from local storage
   const token = localStorage.getItem('token'); // Token from local storage
+  const [players, setPlayers] = useState({ firstPlayerId: null, secondPlayerId: null });
 
   // Socket listeners and setup
   useEffect(() => {
@@ -29,12 +30,17 @@ const Puissance = () => {
       // Listen for room full event
       socket.on('roomFull', (data) => {
         setIsRoomFull(true);  // Room is full, update the state
+        console.log(data);
       });
 
       // Listen for game ready event
       socket.on('gameReady', (gameData) => {
         setIsGameReady(true);
         setIsMyTurn(gameData.firstPlayer === user.username);
+        setPlayers({
+          firstPlayerId: gameData.firstPlayerId,
+          secondPlayerId: gameData.secondPlayerId,
+        });
       });
 
       // Listen for opponent move event
@@ -61,7 +67,7 @@ const Puissance = () => {
 
   // Function to join room
   const joinRoom = () => {
-    socket.emit('joinRoom', { username: user.username, roomCode });
+    socket.emit('joinRoom', { id: user.id, username: user.username, roomCode });
     setIsRoomJoined(true);
   };
 
@@ -153,7 +159,25 @@ const Puissance = () => {
     if (winningCellsResult) {
       setWinner(user.username);
       setWinningCells(winningCellsResult);
+      // Envoyer au backend pour enregistrer la victoire
+    try {
+      const loserId = user.id === players.firstPlayerId ? players.secondPlayerId : players.firstPlayerId;
+
+      fetch('http://localhost:3000/match/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Si tu utilises des jetons pour l'authentification
+        },
+        body: JSON.stringify({
+          winnerId: user.id,
+          loserId: loserId,
+        }),
+      });
       socket.emit('gameWon', { winner: user.username, roomCode });
+    } catch (error) {
+      console.error("Error updating match record:", error);
+    }
     } else {
       socket.emit('makeMove', { board: newBoard, nextPlayer: currentPlayer === 1 ? 2 : 1, roomCode });
       setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
