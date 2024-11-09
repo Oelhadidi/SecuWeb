@@ -9,7 +9,7 @@ dotenv.config();
  */
 export const sequelize = new Sequelize({
 	dialect: MySqlDialect,
-	database: process.env.DB_NAME || "database_name",
+	database: process.env.DB_NAME || "gamevite",
 	user: process.env.DB_USER || "root",
 	password: process.env.DB_PASSWORD || "",
 	host: process.env.DB_HOST || "localhost",

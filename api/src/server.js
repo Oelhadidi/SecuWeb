@@ -7,6 +7,7 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import fastifyJWT from "@fastify/jwt";
 import { usersRoutes } from "./routes/users.js";
 import { gamesRoutes } from "./routes/games.js";
+import { matchRecordRoutes } from "./routes/matchRecord.js";
 import { sequelize } from "./bdd.js";
 import socketioServer from "fastify-socket.io";
 
@@ -60,6 +61,7 @@ app.decorate("authenticate", async (request, reply) => {
 // Routes setup
 usersRoutes(app);
 gamesRoutes(app);
+matchRecordRoutes(app);
 
 // Test DB connection
 try {
@@ -83,7 +85,7 @@ app.ready().then(() => {
     console.log(`Player connected: ${socket.id}`);
 
     // Handle player joining a room
-    socket.on('joinRoom', ({ username, roomCode }) => {
+    socket.on('joinRoom', ({ id, username, roomCode }) => {
       // Check how many players are in the room
       const roomPlayers = Object.values(players).filter(player => player.roomCode === roomCode);
 
@@ -95,7 +97,7 @@ app.ready().then(() => {
 
       // Add player to the room
       socket.join(roomCode);
-      players[socket.id] = { username, roomCode };
+      players[socket.id] = { id, username, roomCode };
       console.log(`${username} joined room ${roomCode}`);
 
       // Initialize the game state for the room if it doesn't exist
@@ -111,7 +113,7 @@ app.ready().then(() => {
       const updatedRoomPlayers = Object.values(players).filter(player => player.roomCode === roomCode);
       if (updatedRoomPlayers.length === 2) {
         const [firstPlayer, secondPlayer] = updatedRoomPlayers;
-        app.io.to(roomCode).emit('gameReady', { firstPlayer: firstPlayer.username, secondPlayer: secondPlayer.username });
+        app.io.to(roomCode).emit('gameReady', { firstPlayer: firstPlayer.username, secondPlayer: secondPlayer.username, firstPlayerId: firstPlayer.id, secondPlayerId: secondPlayer.id });
       }
     });
 

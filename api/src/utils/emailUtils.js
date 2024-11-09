@@ -4,6 +4,8 @@ import { verificationEmailTemplate } from './mjmlTemplate.js';
 
 export async function sendVerificationEmail(email, token) {
     console.log("Préparation de l'envoi de l'e-mail de vérification à:", email);
+    console.log("Préparation de l'envoi de l'e-mail de :", process.env.EMAIL_USER);
+    console.log("Préparation de l'envoi avec le mdp:", process.env.EMAIL_PASSWORD);
     const verificationUrl = `http://localhost:5173/verify?token=${token}`;
 
     // Utiliser le template depuis emailTemplates.js
@@ -11,20 +13,31 @@ export async function sendVerificationEmail(email, token) {
 
     const { html } = mjml2html(mjmlTemplate);
 
-    // Configurer le transporteur d'e-mail
+    // Configurer le transporteur d'e-mail ( ICI MAILTRAP)
+
+    // const transporter = nodemailer.createTransport({
+    //     host: process.env.HOST,
+    //     port: 2525,
+    //     auth: {
+    //         user: process.env.EMAIL_USER_MAILTRAP,
+    //         pass: process.env.EMAIL_PASSWORD_MAILTRAP,
+    //     },
+    // });
+
+    //Configuration de google
     const transporter = nodemailer.createTransport({
-        host: 'sandbox.smtp.mailtrap.io',
-        port: 2525,
+        service: 'gmail',
         auth: {
-            user: 'cd4007196da7aa',
-            pass: '28febd276d0953',
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD,
         },
     });
 
     // Envoyer l'e-mail
     try {
         await transporter.sendMail({
-            from: 'no-reply@mailtrap.io',
+            // from: 'no-reply@mailtrap.io',
+            from: process.env.EMAIL_USER,
             to: email,
             subject: 'Vérification de votre compte',
             html: html,

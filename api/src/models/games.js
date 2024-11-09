@@ -17,6 +17,14 @@ const Game = sequelize.define("game", {
 		allowNull: false,
 		defaultValue: "pending",
 	},
+	player1Score: {
+		type: DataTypes.INTEGER,
+		defaultValue: 0,
+	},
+	player2Score: {
+		type: DataTypes.INTEGER,
+		defaultValue: 0,
+	},
 });
 Game.belongsTo(User, { targetKey: "id", foreignKey: "creator", as: "player1" });
 Game.belongsTo(User, {
