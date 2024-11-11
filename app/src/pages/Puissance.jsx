@@ -16,9 +16,41 @@ const Puissance = () => {
   const user = JSON.parse(localStorage.getItem('user')); // User from local storage
   const token = localStorage.getItem('token'); // Token from local storage
   const [players, setPlayers] = useState({ firstPlayerId: null, secondPlayerId: null });
+  const [scores, setScores] = useState({ player1Wins: 0, player2Wins: 0 });
+  const [isBoardActive, setIsBoardActive] = useState(true);
 
+
+  if (!user || !token) {
+    alert("Please log in to start the game");
+    window.location.href = '/signin';
+  }
   // Socket listeners and setup
   useEffect(() => {
+
+    // Fetch match scores once players are set
+    const fetchScores = async (player1Id, player2Id) => {
+      try {
+        const response = await fetch(`http://localhost:3000/match/record?player1Id=${player1Id}&player2Id=${player2Id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,  // Include your token for authentication if needed
+          },
+        });
+    
+        const data = await response.json();
+        // Determine which player ID corresponds to the first player in `players`
+    if (data.player1Id === player1Id) {
+      // data.player1Id matches player1Id, so we assign scores directly
+      setScores({ player1Wins: data.player1Wins, player2Wins: data.player2Wins });
+    } else {
+      // data.player1Id matches player2Id, so we swap the scores
+      setScores({ player1Wins: data.player2Wins, player2Wins: data.player1Wins });
+    }
+      } catch (error) {
+        console.error("Error fetching match record:", error);
+      }
+    };
+
+
     if (!user || !token) {
       alert("Please log in to start the game");
       window.location.href = '/signin';
@@ -33,6 +65,26 @@ const Puissance = () => {
         console.log(data);
       });
 
+      // Listen for restart request notification
+      socket.on('restartRequested', (data) => {
+        alert(data.message); // Alert players that the other player is waiting for restart confirmation
+        setIsBoardActive(false);
+      });
+
+      // Listen for game reset
+      socket.on('gameReset', () => {
+        // Reset the board and other necessary state variables
+        setBoard(Array(6).fill(null).map(() => Array(7).fill(null)));
+        setCurrentPlayer(1); // Set starting player
+        setWinner(null); // Clear winner
+        setIsBoardActive(true);
+      });
+
+      // Disable the board when only one player requests a restart
+      socket.on('disableBoard', () => {
+        setIsBoardActive(false);
+      });
+
       // Listen for game ready event
       socket.on('gameReady', (gameData) => {
         setIsGameReady(true);
@@ -40,7 +92,10 @@ const Puissance = () => {
         setPlayers({
           firstPlayerId: gameData.firstPlayerId,
           secondPlayerId: gameData.secondPlayerId,
+          firstPlayer:gameData.firstPlayer,
+          secondPlayer:gameData.secondPlayer,
         });
+        fetchScores(gameData.firstPlayerId,gameData.secondPlayerId);
       });
 
       // Listen for opponent move event
@@ -53,7 +108,10 @@ const Puissance = () => {
       // Listen for game won event
       socket.on('gameWon', (winner) => {
         setWinner(winner);
+        console.log(fetchScores(players.firstPlayerId,players.secondPlayerId));
+        fetchScores(players.firstPlayerId,players.secondPlayerId);
       });
+
 
       return () => {
         // Cleanup listeners when component unmounts
@@ -61,9 +119,13 @@ const Puissance = () => {
         socket.off('gameReady');
         socket.off('opponentMove');
         socket.off('gameWon');
+        socket.off('gameReset');
+        socket.off('restartRequested');
+        socket.off('disableBoard');
       };
     }
-  }, [user, token, currentPlayer]);
+  }, [user, token, currentPlayer, players, winner]);
+
 
   // Function to join room
   const joinRoom = () => {
@@ -146,44 +208,56 @@ const Puissance = () => {
 
   // Function to handle disc drop
   const dropDisc = useCallback((colIndex) => {
-    if (!isMyTurn || winner) return;
+    // If the board is inactive (waiting for the second player), do nothing
+    if (!isBoardActive || !isMyTurn || winner) return;
+  
+    // Find the available row for the given column
     const rowIndex = board.map(row => row[colIndex]).lastIndexOf(null);
-    if (rowIndex === -1) return;
-
+    if (rowIndex === -1) return;  // If the column is full, do nothing
+  
+    // Create a copy of the board and update the column
     const newBoard = board.map(row => [...row]);
     newBoard[rowIndex][colIndex] = currentPlayer;
     setBoard(newBoard);
-
+  
     // Check if the current player wins
     const winningCellsResult = checkWin(newBoard, currentPlayer);
     if (winningCellsResult) {
+      // Emit the game won event and send data to the backend
+      socket.emit('makeMove', { board: newBoard, nextPlayer: currentPlayer === 1 ? 2 : 1, roomCode });
       setWinner(user.username);
       setWinningCells(winningCellsResult);
-      // Envoyer au backend pour enregistrer la victoire
-    try {
-      const loserId = user.id === players.firstPlayerId ? players.secondPlayerId : players.firstPlayerId;
-
-      fetch('http://localhost:3000/match/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Si tu utilises des jetons pour l'authentification
-        },
-        body: JSON.stringify({
-          winnerId: user.id,
-          loserId: loserId,
-        }),
-      });
-      socket.emit('gameWon', { winner: user.username, roomCode });
-    } catch (error) {
-      console.error("Error updating match record:", error);
-    }
+      
+      try {
+        // Determine the loser based on player IDs
+        const loserId = user.id === players.firstPlayerId ? players.secondPlayerId : players.firstPlayerId;
+  
+        // Update the match record with the winner and loser
+        fetch('http://localhost:3000/match/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            winnerId: user.id,
+            loserId: loserId,
+          }),
+        });
+  
+        // Notify the backend that the game has been won
+        socket.emit('gameWon', { winner: user.username, roomCode, winningCells: winningCellsResult });
+      } catch (error) {
+        console.error("Error updating match record:", error);
+      }
     } else {
+      // If the game isn't over, just make the move and switch players
       socket.emit('makeMove', { board: newBoard, nextPlayer: currentPlayer === 1 ? 2 : 1, roomCode });
       setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
       setIsMyTurn(false);
     }
-  }, [isMyTurn, winner, board, currentPlayer, user.username, roomCode]);
+  }, [isBoardActive, isMyTurn, winner, board, currentPlayer, user.username, roomCode, players.firstPlayerId, players.secondPlayerId]);
+  
 
   // Function to reset the game
   const resetGame = useCallback(() => {
@@ -191,7 +265,7 @@ const Puissance = () => {
     setCurrentPlayer(1);
     setWinner(null);
     setWinningCells([]);
-    socket.emit('resetGame', roomCode);  // Notify the server
+    socket.emit('requestRestart', roomCode);  // Notify the server
   }, [roomCode]);
 
   // Component rendering logic
@@ -237,6 +311,21 @@ const Puissance = () => {
           ) : (
             <h2>{isMyTurn ? 'Your Turn' : "Opponent's Turn"}</h2>
           )}
+
+           {/* Scores Section */}
+          <div className="flex items-center justify-around m-4 p-4 bg-gray-800 rounded-lg text-white">
+            <div className="score-card text-center">
+              <h3 className="text-lg font-bold">{players.firstPlayer} Wins</h3>
+              <p className="text-3xl font-semibold text-blue-400">{scores.player1Wins}</p>
+            </div>
+            <div className="score-card mx-2 text-center">
+              <h3 className="text-lg font-bold">{players.secondPlayer} Wins</h3>
+              <p className="text-3xl font-semibold text-yellow-400">{scores.player2Wins}</p>
+            </div>
+          </div>
+
+
+
           <div className="board">
             {board.map((row, rowIndex) => (
               <div key={rowIndex} className="row">

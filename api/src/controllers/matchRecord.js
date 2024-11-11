@@ -34,3 +34,21 @@ export async function updateMatchRecord(winnerId, loserId) {
 export async function getMatches() {
     return await MatchRecord.findAll();
 }
+
+
+export async function getMatchRecord(player1id, player2id) {
+    // Vérification des paramètres
+    if (!player1id || !player2id) {
+        return ({ error: "Player IDs are required" });
+    }
+
+    const match = await MatchRecord.findOne({
+        where: {
+            [Op.or]: [
+                { player1Id: player1id, player2Id: player2id },
+                { player1Id: player2id, player2Id: player1id }
+            ]
+        }
+    });
+    return match;
+}

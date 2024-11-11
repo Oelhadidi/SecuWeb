@@ -78,6 +78,7 @@ try {
 // Store for players and game states per room
 let players = {}; // To track which players are in which rooms
 let gameStates = {}; // To track game state per room
+let restartVotes = {};
 
 // Socket.IO setup
 app.ready().then(() => {
@@ -128,11 +129,12 @@ app.ready().then(() => {
     });
 
     // Handle game won
-    socket.on('gameWon', ({ winner, roomCode }) => {
+    socket.on('gameWon', ({ winner, roomCode, winningCells }) => {
       console.log('Game won by:', winner);
       if (gameStates[roomCode]) {
         gameStates[roomCode].winner = winner;
-        app.io.to(roomCode).emit('gameWon', winner);
+        gameStates[roomCode].winningCells = winningCells;
+        app.io.to(roomCode).emit('gameWon', winner, winningCells);
       }
     });
 
@@ -145,6 +147,46 @@ app.ready().then(() => {
         app.io.to(roomCode).emit('gameReset');
       }
     });
+
+
+    // Handle restart game request
+  socket.on('requestRestart', (roomCode) => {
+    // Initialize room's restartVotes if it doesn't exist
+    if (!restartVotes[roomCode]) {
+      restartVotes[roomCode] = new Set(); // Using a Set to ensure unique player votes
+    }
+
+    // Add player’s socket.id to restartVotes for the room
+    restartVotes[roomCode].add(socket.id);
+
+    // Check if both players have requested a restart
+    const roomPlayers = Object.keys(players).filter(playerSocketId => players[playerSocketId].roomCode === roomCode);
+    
+    // Set restart pending and disable moves if one player has requested a restart
+    if (!gameStates[roomCode].restartPending) {
+      gameStates[roomCode].restartPending = true;
+      app.io.to(roomCode).emit('disableBoard'); // Tell clients to disable moves
+    }
+
+
+    if (restartVotes[roomCode].size === roomPlayers.length) {
+      // Reset the game state
+      if (gameStates[roomCode]) {
+        gameStates[roomCode].board = Array(6).fill(null).map(() => Array(7).fill(null));
+        gameStates[roomCode].currentPlayer = 1;
+        gameStates[roomCode].winner = null;
+      }
+
+      // Notify players in the room about the game reset
+      app.io.to(roomCode).emit('gameReset');
+
+      // Clear restart votes for this room
+      restartVotes[roomCode].clear();
+    } else {
+      // Inform the room that one player has requested a restart
+      app.io.to(roomCode).emit('restartRequested', { message: 'Waiting for both players to agree on restart.' });
+    }
+  });
 
     // Handle player disconnect
     socket.on('disconnect', () => {
