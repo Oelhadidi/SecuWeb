@@ -2,9 +2,9 @@
 
 Pour démarrer le serveur :
 
-Lancer Votre Wamp Server et modifier les paramètres dans le fichier : 
+Lancer Votre Wamp Server et céer et modifier les paramètres dans le fichier : 
 
-".env" dans le dossier "Api"
+".env" dans le dossier "Api" en se basant des données du fichier ".env.exemple"
 
 
 
